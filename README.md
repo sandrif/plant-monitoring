@@ -46,7 +46,7 @@ npm run dev
 Create `server/.env`:
 
 ```
-DATABASE_URL=postgresql://plant_monitoring_db_user:puh4ahiPmSxzN5B64THtNONjswN5Qyky@dpg-d6ulj114tr6s73902nig-a.frankfurt-postgres.render.com/plant_monitoring_db
+DATABASE_URL=your_postgres_connection_string
 PORT=3001
 ```
 
