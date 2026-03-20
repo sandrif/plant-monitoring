@@ -2,12 +2,21 @@
 
 IoT plant monitoring system — tracks temperature and humidity via sensor, Gateway on Raspberry Pi, cloud dashboard.
 
+## Live URLs
+
+- Frontend: <https://plant-monitoring-frontend.onrender.com>
+- Backend API: <https://plant-monitoring-backend-ep1b.onrender.com/>
+
+> Note: Free tier services sleep after 15 min of inactivity — first load may take 30-60 seconds.
+> Cron job on /ping endpoint every 10 mins
+
 ## Project Structure
 
 ```
 plant-monitoring/
-├── server/    # Express.js API
+├── server/    # Express.js API (Node.js + Express)
 ├── client/    # React frontend (Vite)
+├── schema.sql # Database schema
 └── README.md
 ```
 
@@ -15,8 +24,30 @@ plant-monitoring/
 
 ### Prerequisites
 
-- Node.js (LTS)
-- PostgreSQL connection string (get from team)
+- Node.js LTS — <https://nodejs.org>
+- PostgreSQL client (for DB setup) — `brew install libpq`
+- PostgreSQL connection string (get from team — never commit this)
+
+## Database setup
+
+Run once to initialise a fresh database:
+
+```bash
+psql YOUR_EXTERNAL_CONNECTION_STRING 
+```
+
+Get the connection string from the team.
+
+## Running locally
+
+### Environment variables
+
+Create `server/.env` (ask team for the connection string):
+
+```
+DATABASE_URL=your_external_postgres_connection_string
+PORT=3001
+```
 
 ### Backend
 
@@ -41,16 +72,47 @@ npm install
 npm run dev
 ```
 
-### Environment variables
+## API Endpoints
 
-Create `server/.env`:
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/ping` | None | Health check |
+| GET | `/readings` | None | Last 50 readings |
+| POST | `/readings` | API key | Submit new reading |
+| GET | `/gateways` | None | List gateways |
+| POST | `/gateways/register` | None | Register new gateway |
+
+### Registering a gateway
+
+```bash
+curl -X POST https://plant-monitoring-backend-ep1b.onrender.com/gateways/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "RPi Gateway 1"}'
+```
+
+Returns an `api_key` — store this on the gateway device.
+
+### Sending a reading
+
+```bash
+curl -X POST https://plant-monitoring-backend-ep1b.onrender.com/readings \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_KEY" \
+  -d '{"temperature": 22.5, "humidity": 58.3}'
+```
+
+## Gateway flow (Node-RED on Raspberry Pi/laptop)
 
 ```
-DATABASE_URL=your_postgres_connection_string
-PORT=3001
+RPi first boot → POST /gateways/register {name: "RPi Gateway 1"}
+             ← receives api_key, stores it locally in Node-RED
+
+Every 5 min  → POST /readings with header x-api-key: <stored key>
+             ← 200 OK, gateway deletes local SQLite record
 ```
 
 ## Deployment
 
-- Backend + DB: Render
-- Frontend: Render Static Site
+- Backend: Render Web Service (Frankfurt)
+- Database: Render PostgreSQL (Frankfurt, free tier expires in 90 days) - will be changed to Supabase
+- Frontend: Render Static Site (Global CDN)

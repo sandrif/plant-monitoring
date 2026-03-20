@@ -1,0 +1,25 @@
+-- Plant Monitoring DB Schema
+-- Run this once to set up a fresh database
+-- psql postgresql://YOUR_CONNECTION_STRING -f server/schema.sql
+
+CREATE TABLE gateways (
+  id         SERIAL PRIMARY KEY,
+  name       VARCHAR(100) NOT NULL,
+  api_key    VARCHAR(64)  NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE readings (
+  id          SERIAL PRIMARY KEY,
+  gateway_id  INTEGER REFERENCES gateways(id),
+  temperature NUMERIC(5,2),
+  humidity    NUMERIC(5,2),
+  recorded_at TIMESTAMPTZ NOT NULL,
+  received_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_readings_gateway_time 
+  ON readings(gateway_id, recorded_at DESC);
+
+INSERT INTO gateways (name, api_key) 
+VALUES ('RPi Gateway 1', 'test-api-key-123');
