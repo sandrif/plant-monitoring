@@ -10,6 +10,8 @@ app.use(express.json());
 // health check
 app.get("/", (req, res) => res.json({ status: "ok" }));
 
+app.get("/ping", (req, res) => res.send("ok"));
+
 // get all readings
 app.get("/readings", async (req, res) => {
   try {
