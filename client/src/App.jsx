@@ -1,121 +1,172 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [readings, setReadings] = useState([]);
+  const [gateways, setGateways] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const [r, g] = await Promise.all([
+          axios.get(`${API}/readings`),
+          axios.get(`${API}/gateways`),
+        ]);
+        setReadings(r.data.reverse());
+        setGateways(g.data);
+      } catch (err) {
+        setError("Could not connect to API");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+    const interval = setInterval(fetch, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const latest = readings[readings.length - 1];
+
+  if (loading) return <div style={styles.center}>Loading...</div>;
+  if (error) return <div style={styles.center}>{error}</div>;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div style={styles.page}>
+      <h1 style={styles.title}>🌱 Plant Monitor</h1>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <div style={styles.cards}>
+        <div style={styles.card}>
+          <div style={styles.label}>Temperature</div>
+          <div style={styles.value}>
+            {latest ? `${latest.temperature}°C` : "—"}
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+        <div style={styles.card}>
+          <div style={styles.label}>Humidity</div>
+          <div style={styles.value}>{latest ? `${latest.humidity}%` : "—"}</div>
         </div>
-      </section>
+        <div style={styles.card}>
+          <div style={styles.label}>Gateways</div>
+          <div style={styles.value}>{gateways.length}</div>
+        </div>
+        <div style={styles.card}>
+          <div style={styles.label}>Readings</div>
+          <div style={styles.value}>{readings.length}</div>
+        </div>
+      </div>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <div style={styles.chart}>
+        <h2 style={styles.subtitle}>Last 50 readings</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={readings}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="recorded_at"
+              tickFormatter={(v) => new Date(v).toLocaleTimeString()}
+            />
+            <YAxis yAxisId="left" domain={["auto", "auto"]} />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              domain={["auto", "auto"]}
+            />
+            <Tooltip labelFormatter={(v) => new Date(v).toLocaleString()} />
+            <Legend />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="temperature"
+              stroke="#e07b39"
+              name="Temp (°C)"
+              dot={false}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="humidity"
+              stroke="#4a90d9"
+              name="Humidity (%)"
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div style={styles.chart}>
+        <h2 style={styles.subtitle}>Gateways</h2>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Registered</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gateways.map((g) => (
+              <tr key={g.id}>
+                <td>{g.id}</td>
+                <td>{g.name}</td>
+                <td>{new Date(g.created_at).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
-export default App
+const styles = {
+  page: {
+    maxWidth: 900,
+    margin: "0 auto",
+    padding: "2rem",
+    fontFamily: "sans-serif",
+  },
+  title: { fontSize: "2rem", marginBottom: "1.5rem" },
+  subtitle: { fontSize: "1.2rem", marginBottom: "1rem" },
+  center: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+  },
+  cards: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: "1rem",
+    marginBottom: "2rem",
+  },
+  card: {
+    background: "#f5f5f5",
+    borderRadius: 8,
+    padding: "1.5rem",
+    textAlign: "center",
+  },
+  label: { fontSize: "0.85rem", color: "#666", marginBottom: 8 },
+  value: { fontSize: "2rem", fontWeight: "bold", color: "#333" },
+  chart: {
+    background: "#f5f5f5",
+    borderRadius: 8,
+    padding: "1.5rem",
+    marginBottom: "1.5rem",
+  },
+  table: { width: "100%", borderCollapse: "collapse" },
+};
+
+export default App;
