@@ -1,3 +1,5 @@
+IMPORTANT: POC for uni project in : https://github.com/IoT-team1/FlowerPower 
+
 # Plant Monitoring System
 
 IoT plant monitoring system — tracks temperature and humidity via sensor, Gateway on Raspberry Pi/Laptop, cloud dashboard.
@@ -20,9 +22,7 @@ plant-monitoring/
 └── README.md
 ```
 
-## Running locally
-
-### Prerequisites
+## Prerequisites
 
 - Node.js LTS — <https://nodejs.org>
 - PostgreSQL client (for DB setup) — `brew install libpq`
@@ -30,7 +30,7 @@ plant-monitoring/
 
 ## Database setup
 
-Database is hosted on Supabase (free tier, no expiry).
+### Option A — Shared team database
 
 Run once to initialise a fresh database:
 ```bash
@@ -43,6 +43,31 @@ psql postgresql://postgres:[PASSWORD]@db.xxxx.supabase.co:5432/postgres
 ```
 
 Get the full connection string from the team.
+
+### Option B — Local PostgreSQL (offline development)
+Install and start PostgreSQL:
+```bash
+brew install postgresql@15
+brew services start postgresql@15
+```
+
+Create and initialise local database:
+```bash
+createdb plant-monitoring
+psql -f server/schema.sql postgresql://localhost/plant-monitoring
+```
+
+Connect to inspect manually:
+```bash
+psql postgresql://localhost/plant-monitoring
+```
+
+Then set your local `.env`:
+```
+DATABASE_URL=postgresql://localhost/plant-monitoring
+PORT=3001
+NODE_ENV=development
+```
 
 ## Running locally
 
@@ -120,5 +145,5 @@ Every 5 min  → POST /readings with header x-api-key: <stored key>
 ## Deployment
 
 - Backend: Render Web Service (Frankfurt)
-- Database: Supabase PostgreSQL (free tier, no expiry)
+- Database: Render PostgreSQL (Frankfurt, free tier expires in 90 days)
 - Frontend: Render Static Site (Global CDN)
