@@ -1,6 +1,6 @@
 # Plant Monitoring System
 
-IoT plant monitoring system — tracks temperature and humidity via sensor, Gateway on Raspberry Pi, cloud dashboard.
+IoT plant monitoring system — tracks temperature and humidity via sensor, Gateway on Raspberry Pi/Laptop, cloud dashboard.
 
 ## Live URLs
 
@@ -30,13 +30,19 @@ plant-monitoring/
 
 ## Database setup
 
-Run once to initialise a fresh database:
+Database is hosted on Supabase (free tier, no expiry).
 
+Run once to initialise a fresh database:
 ```bash
-psql YOUR_EXTERNAL_CONNECTION_STRING 
+psql -f server/schema.sql postgresql://postgres:[PASSWORD]@db.xxxx.supabase.co:5432/postgres
 ```
 
-Get the connection string from the team.
+To connect and inspect manually:
+```bash
+psql postgresql://postgres:[PASSWORD]@db.xxxx.supabase.co:5432/postgres
+```
+
+Get the full connection string from the team.
 
 ## Running locally
 
@@ -101,7 +107,7 @@ curl -X POST https://plant-monitoring-backend-ep1b.onrender.com/readings \
   -d '{"temperature": 22.5, "humidity": 58.3}'
 ```
 
-## Gateway flow (Node-RED on Raspberry Pi/laptop)
+## Gateway flow (Node-RED on Raspberry Pi/Laptop)
 
 ```
 RPi first boot → POST /gateways/register {name: "RPi Gateway 1"}
@@ -114,5 +120,5 @@ Every 5 min  → POST /readings with header x-api-key: <stored key>
 ## Deployment
 
 - Backend: Render Web Service (Frankfurt)
-- Database: Render PostgreSQL (Frankfurt, free tier expires in 90 days) - will be changed to Supabase
+- Database: Supabase PostgreSQL (free tier, no expiry)
 - Frontend: Render Static Site (Global CDN)
